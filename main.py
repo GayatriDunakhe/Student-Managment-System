@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import *
 from tkinter import ttk
 import pymysql
@@ -16,8 +17,10 @@ class Student:
         self.contact_var = StringVar()
         self.dob_var = StringVar()
 
-        self.search_by = StringVar()
-        self.search_txt = StringVar()
+        self.batch_var = StringVar()
+        self.get_num = StringVar()
+        # self.search_by = StringVar()
+        # self.search_txt = StringVar()
 
         pro_title = Label(self.root, text="Student Management System", font=("times new roman", 40, "bold"),
                           bg="#B1D0E0", fg="#1A374D")
@@ -97,17 +100,26 @@ class Student:
         show = Label(detail_frame, text="Student Data", bg="#D3DEDC", font=("times new roman", 20, "bold"))
         show.grid(row=0, column=0, pady=10, padx=10, sticky="w")
 
+        # Create student batch
+        batch_btn = Button(detail_frame, text="Create Batch", command=self.stud_batch, width=10).grid(row=0, column=5, pady=20, padx=10, sticky="w")
+
+        num_label = Label(detail_frame, text="Enter Number of student in batch", bg="#D3DEDC", font=("times new roman", 10, "bold"))
+        num_label.grid(row=0, column=6, pady=10, padx=10, sticky="w")
+
+        txt_get_num = Entry(detail_frame, width=10, textvariable=self.get_num, font=("times new roman", 15))
+        txt_get_num.grid(row=0, column=7, pady=10, padx=10, sticky="w")
+
         # Search label and combobox
         # search = Label(detail_frame, text="Search", bg="#D3DEDC", font=("times new roman", 20, "bold"))
         # search.grid(row=0, column=0, pady=10, padx=10, sticky="w")
-
+        #
         # search_combo = ttk.Combobox(detail_frame, width=10, textvariable=self.search_by, font=("times new roman", 13, "bold"), state='readonly')
         # search_combo['values'] = ("roll_no", "name", "email")
         # search_combo.grid(row=0, column=1, pady=10, padx=10, sticky="w")
         #
         # txt_search = Entry(detail_frame, width=30, textvariable=self.search_txt, font=("times new roman", 15, "bold"))
         # txt_search.grid(row=0, column=2, pady=10, padx=10, sticky="w")
-        #
+
         # search_btn = Button(detail_frame, text="Search", width=10, command=self.search_data).grid(row=0, column=3, pady=20, padx=10, sticky="w")
         # show_data = Button(detail_frame, text="Show All", width=10, command=self.fetch_data).grid(row=0, column=4  , pady=20, padx=10, sticky="w")
 
@@ -234,18 +246,94 @@ class Student:
         self.fetch_data()
         self.clear()
 
-    def search_data(self):
+    def stud_batch(self):
         con = pymysql.connect(host="localhost", user="root", password="", database="student_management")
         cur = con.cursor()
-        cur.execute("select * from students where" + str(self.search_by.get()) + "LIKE %" +
-                    str(self.search_txt.get()) + "%")
-        rows = cur.fetchall()
-        if len(rows) != 0:
-            self.stud_table.delete(*self.stud_table.get_children())
-            for row in rows:
-                self.stud_table.insert('', END, values=row)
-            con.commit()
-        con.close()
+        num_rows =cur.execute("select * from students")
+        data = cur.fetchall()
+
+        # Create new window----------------------------------------------------------------------------------------------------
+        if self.get_num.get() == "" or int(self.get_num.get()) < 3 or int(self.get_num.get()) > 10:
+                messagebox.showerror("Error",
+                                     "Check the fild is empty or not and add number of student in btwn 2 or 11 ex- 3,5")
+
+        else:
+            new_window = Toplevel(root, bg="#D3DEDC")
+            new_window.geometry("1000x900")
+            nshow = Label(new_window, text="Batches", bg="#D3DEDC", font=("times new roman", 20, "bold"))
+            nshow.grid(row=0, column=0, pady=10, padx=10, sticky="w")
+
+            num = int(self.get_num.get())
+            # print(type(num))
+
+            batch = tuple(data[x:x + num]
+                          for x in range(0, len(data), num))
+            # print(len(batch))
+            count = 0
+            for i in batch:
+                # print(i)
+                self.create_table(new_window, i, count)
+                count += 1
+
+
+    def create_table(self, window, batch, count):
+        grid_frame = Frame(window)
+        custom_y = (count * 150) + 75
+        no = count+1
+        grid_frame.place(x=10, y=custom_y, width=870, height=150)
+
+        batch_lab = Label(window, text=("Batche", no), font=("times new roman", 10))
+        batch_lab.place(x=20, y=custom_y-19, width=80, height=20)
+
+        # Tree view
+        scroll_x = Scrollbar(grid_frame, orient=HORIZONTAL)
+        scroll_y = Scrollbar(grid_frame, orient=VERTICAL)
+        self.batch_table = ttk.Treeview(grid_frame,
+                                       columns=("rollno", "name", "email", "gender", "contact", "dob", "address"),
+                                       xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+
+        scroll_x.pack(side=BOTTOM, fill=X)
+        scroll_y.pack(side=RIGHT, fill=Y)
+
+        scroll_x.config(command=self.batch_table.xview)
+        scroll_y.config(command=self.batch_table.yview)
+
+
+        self.batch_table.heading("rollno", text="Roll No")
+        self.batch_table.heading("name", text="Name")
+        self.batch_table.heading("email", text="Email")
+        self.batch_table.heading("gender", text="Gender")
+        self.batch_table.heading("contact", text="Contact")
+        self.batch_table.heading("dob", text="DOB")
+        self.batch_table.heading("address", text="Address")
+        self.batch_table['show'] = "headings"
+
+        self.batch_table.column("rollno", width=100)
+        self.batch_table.column("name", width=120)
+        self.batch_table.column("email", width=120)
+        self.batch_table.column("gender", width=100)
+        self.batch_table.column("contact", width=100)
+        self.batch_table.column("dob", width=100)
+        self.batch_table.column("address", width=100)
+
+        self.batch_table.pack(fill=BOTH, expand=1)
+
+        for j in batch:
+            # print("\n", j)
+            self.batch_table.insert('', END, values=j)
+
+
+    # def search_data(self):
+    #     con = pymysql.connect(host="localhost", user="root", password="", database="student_management")
+    #     cur = con.cursor()
+    #     cur.execute("select * from students where"+str(self.search_by.get())+" LIKE '%"+str(self.search_txt.get())+"%'")
+    #     rows = cur.fetchall()
+    #     if len(rows) != 0:
+    #         self.stud_table.delete(*self.stud_table.get_children())
+    #         for row in rows:
+    #             self.stud_table.insert('', END, values=row)
+    #         con.commit()
+    #     con.close()
 
 root = Tk()
 stud = Student(root)
