@@ -1,4 +1,5 @@
 import tkinter
+import datetime
 from tkinter import *
 from tkinter import ttk
 import pymysql
@@ -284,6 +285,14 @@ class Student:
 
         batch_lab = Label(window, text=("Batche", no), font=("times new roman", 10))
         batch_lab.place(x=20, y=custom_y-19, width=80, height=20)
+
+        # adding dates on batches
+        # date = datetime.datetime.now()
+        # print(date.strftime("%d-%m-%Y"))
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+        days_lab = Label(window, text=days[count], font=("times new roman", 10))
+        days_lab.place(x=200, y=custom_y - 19, width=150, height=20)
 
         # Tree view
         scroll_x = Scrollbar(grid_frame, orient=HORIZONTAL)
